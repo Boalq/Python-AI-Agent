@@ -1,0 +1,10 @@
+[project]
+name = "python-ai-agent"
+version = "0.1.0"
+description = "Simple AI-Agent project"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "openai==2.44.0",
+    "python-dotenv==1.1.0",
+]
