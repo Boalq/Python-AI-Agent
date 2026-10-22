@@ -4,6 +4,7 @@ from openai import OpenAI
 import argparse
 from prompts import system_prompt
 from call_function import available_functions
+from call_function import call_function
 import json
 
 load_dotenv()
@@ -30,27 +31,38 @@ def main():
     response = client.chat.completions.create(
         model="openrouter/free",
         messages=messages,
-        #tools=available_functions,
+        tools=available_functions,
     )
 
-    if args.verbose == True:
-        print("User prompt: ", args.user_prompt)
-        print("Prompt tokens:", response.usage.prompt_tokens)
-        print("Response tokens:", response.usage.completion_tokens)
+    for _ in range(2):
+        if args.verbose == True:
+            print("User prompt: ", args.user_prompt)
+            print("Prompt tokens:", response.usage.prompt_tokens)
+            print("Response tokens:", response.usage.completion_tokens)
 
-    if args.user_prompt == "run main.py":
-        print("run_python_file main.py aa")
+
+        message = response.choices[0].message
+        
+
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                result_message = call_function(tool_call, args.verbose)
+
+                if not result_message["content"]:
+                    raise Exception("Fatal: no content in tool response")
+
+                if args.verbose:
+                    print(f"-> {result_message['content']}")
+                else:
+                    print(result_message['content'])
+
+                messages.append(result_message)
+        else:
+            print("Response: \n", response.choices[0].message.content)
+        
+        messages.append(message)
     
-    message = response.choices[0].message
-    """
-    if message.tool_calls:
-        for tool_call in message.tool_calls:
-            function_args = json.loads(tool_call.function.arguments or "{}")
-            print(f"Calling function: {tool_call.function.name}({function_args})")
-    else:
-    """
-    print("Response: \n", response.choices[0].message.content)
-
+    return
 
 if __name__ == "__main__":
     main()
